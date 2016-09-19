@@ -1,0 +1,1 @@
+C:\"Program Files (x86)"\IntelSWTools\parallel_studio_xe_2016.2.055\bin\psxevars.bat intel64
