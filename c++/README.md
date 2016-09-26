@@ -1,5 +1,4 @@
 # Parallel Edge Scan
-This is a implementation of Parallel Edge Scan based on Dependency Tree.
 There are two implementations.
 - Cache optimized implementation ([CacheOptimizedParallelEdgeScan.cpp](./CacheOptimizedParallelEdgeScan.cpp))
 - Naive implementation ([NaiveParallelEdgeScan.cpp](./NaiveParallelEdgeScan.cpp))
