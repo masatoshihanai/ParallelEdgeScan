@@ -277,5 +277,6 @@ int main(int argc, char** argv) {
 
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   std::cerr << std::endl << "Parallel running time: " << elapsed.count() << std::endl;
+  std::cout << "Naive, " << NUM_THREADS << ", " << elapsed.count() << std::endl;
   return 0;
 }
