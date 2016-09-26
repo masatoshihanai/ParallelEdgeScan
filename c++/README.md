@@ -20,3 +20,7 @@ $ g++ -O2 -pthread -std=c++11 CacheOptimizedParallelEdgeScan.cpp -o CacheOptimiz
 ```
 $ ./CacheOptimizedParallelEdgeScan {# of threads} {Edge file} {Meta data file}
 ```
+Example (12 threads with wiki data)
+```
+$ ./CacheOptimizedParallelEdgeScan 12 ../data/out.wikipedia-growth.edges ../data/out.wikipedia-growth.meta
+```
