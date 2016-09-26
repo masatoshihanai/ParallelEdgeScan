@@ -4,8 +4,7 @@ There are two implementations.
 - Naive implementation ([NaiveParallelEdgeScan.cpp](./NaiveParallelEdgeScan.cpp))
 
 ## Requirement
-- `C++11` compiler
-- `pthread` library
+- `C++11` `pthread` 
 
 ## Build
 Using Intel compiler
