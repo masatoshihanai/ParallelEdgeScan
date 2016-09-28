@@ -286,7 +286,6 @@ int main(int argc, char** argv) {
         labels[lid].store(imax);
       }
       barrier.wait();
-      if (dryRun) return;
       if (id == 0) labels[i].store(departureTime);
       barrier.wait();
       // Get source vertex
@@ -312,6 +311,8 @@ int main(int argc, char** argv) {
         ++edgeItr;
       }
     }
+    if (id == 0) end = std::chrono::system_clock::now();
+    delete reallocatedEdges[id];
   }
 
   for (int threadID = 1; threadID < NUM_THREADS; ++threadID) {

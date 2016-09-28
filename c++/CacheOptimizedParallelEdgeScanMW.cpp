@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
           labels[lid].store(imax);
         }
         barrier.wait();
-        if (dryRun) return;
+        if (dryRun) ;
         if (id == 0) labels[i].store(departureTime);
         barrier.wait();
         // Get source vertex
