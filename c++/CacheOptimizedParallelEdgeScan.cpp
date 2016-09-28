@@ -271,6 +271,7 @@ int main(int argc, char** argv) {
       }
 
       if (id == 0) end = std::chrono::system_clock::now();
+      delete reallocatedEdges[id];
     }, threadID, batchSizes.size());
   }
   barrier.start_threads();

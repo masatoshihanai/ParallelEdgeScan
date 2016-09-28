@@ -14,8 +14,6 @@
 #include <mutex>
 #include <thread>
 
-#include <sys/time.h>
-
 struct Edge {
  public:
   Edge() {}
@@ -219,36 +217,42 @@ int main(int argc, char** argv) {
   std::vector<std::thread*> threads(NUM_THREADS);
   std::chrono::time_point<std::chrono::system_clock> start, end;
 
-  for (int threadID = 0; threadID < NUM_THREADS; ++threadID) {
+  for (int threadID = 1; threadID < NUM_THREADS; ++threadID) {
     threads[threadID] = new std::thread([&](int id, int numBarrier) {
-      barrier.wait_start();
-      if (dryRun) return;
+      reallocatedEdges[id] = new std::vector<Edge>(batchsPerThread[id]);
+      barrier.wait();
       if (id == 0) start = std::chrono::system_clock::now();
 
       for (int i = 0; i < numOfQueries; ++i) {
+        // Init labels
         for (int lid = id; lid < NUM_OF_VERTICES; lid += NUM_THREADS) {
           labels[lid].store(imax);
         }
         barrier.wait();
+        if (dryRun) return;
         if (id == 0) labels[i].store(departureTime);
         barrier.wait();
         // Get source vertex
-        int startEdgeInThisBatch = 0;
+        //auto edgeItr =  batchsPerThread[id].begin();
+        auto edgeItr = reallocatedEdges[id]->begin();
         for (int barrierCounter = 0; barrierCounter < numBarrier; ++barrierCounter) {
-          for (int edgeCounter = id;
-               edgeCounter < batchSizes[barrierCounter];
-               edgeCounter += NUM_THREADS) {
-            if (edges[edgeCounter + startEdgeInThisBatch].departure
-                  >= labels[edges[edgeCounter + startEdgeInThisBatch].fromIndex].load()) {
+          while (edgeItr->departure > 0) {
+            if (edgeItr->departure >= labels[edgeItr->fromIndex].load()) {
               // CAS based
-              int value = labels[edges[edgeCounter + startEdgeInThisBatch].toIndex];
-              while (edges[edgeCounter + startEdgeInThisBatch].arrival < value &&
-                     !(labels[edges[edgeCounter + startEdgeInThisBatch].toIndex]
-                         .compare_exchange_weak(value, edges[edgeCounter + startEdgeInThisBatch].arrival)));
+              int value = labels[edgeItr->toIndex];
+              while (edgeItr->arrival < value &&
+                  !(labels[edgeItr->toIndex].compare_exchange_weak(value, edgeItr->arrival)));
+              // Lock based
+              //std::lock_guard<std::mutex> lock(mutex_labels_);
+              //if (edgeItr->arrival < labels[edgeItr->toIndex].load()) {
+              //  labels[edgeItr->toIndex].store(edgeItr->arrival);
+              //}
             }
+            ++edgeItr;
           }
-          startEdgeInThisBatch += batchSizes[barrierCounter];
+          if (edgeItr->departure == -2) { break; }
           barrier.wait();
+          ++edgeItr;
         }
 //        if (printResult) {
 //          if (id == 0) {
@@ -268,9 +272,49 @@ int main(int argc, char** argv) {
       delete reallocatedEdges[id];
     }, threadID, batchSizes.size());
   }
-  barrier.start_threads();
 
-  for (int threadID = 0; threadID < NUM_THREADS; ++threadID) {
+  {
+    int id = 0;
+    int numBarrier = batchSizes.size();
+    reallocatedEdges[id] = new std::vector<Edge>(batchsPerThread[id]);
+    barrier.wait();
+    if (id == 0) start = std::chrono::system_clock::now();
+
+    for (int i = 0; i < numOfQueries; ++i) {
+      // Init labels
+      for (int lid = id; lid < NUM_OF_VERTICES; lid += NUM_THREADS) {
+        labels[lid].store(imax);
+      }
+      barrier.wait();
+      if (dryRun) return;
+      if (id == 0) labels[i].store(departureTime);
+      barrier.wait();
+      // Get source vertex
+      //auto edgeItr =  batchsPerThread[id].begin();
+      auto edgeItr = reallocatedEdges[id]->begin();
+      for (int barrierCounter = 0; barrierCounter < numBarrier; ++barrierCounter) {
+        while (edgeItr->departure > 0) {
+          if (edgeItr->departure >= labels[edgeItr->fromIndex].load()) {
+            // CAS based
+            int value = labels[edgeItr->toIndex];
+            while (edgeItr->arrival < value &&
+                   !(labels[edgeItr->toIndex].compare_exchange_weak(value, edgeItr->arrival)));
+            // Lock based
+            //std::lock_guard<std::mutex> lock(mutex_labels_);
+            //if (edgeItr->arrival < labels[edgeItr->toIndex].load()) {
+            //  labels[edgeItr->toIndex].store(edgeItr->arrival);
+            //}
+          }
+          ++edgeItr;
+        }
+        if (edgeItr->departure == -2) { break; }
+        barrier.wait();
+        ++edgeItr;
+      }
+    }
+  }
+
+  for (int threadID = 1; threadID < NUM_THREADS; ++threadID) {
     threads[threadID]->join();
     delete threads[threadID];
     threads[threadID] = NULL;
@@ -278,6 +322,6 @@ int main(int argc, char** argv) {
 
   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
   std::cerr << std::endl << "Parallel running time: " << elapsed.count() << std::endl;
-  std::cout << "Naive, " << NUM_THREADS << ", " << elapsed.count() << std::endl;
+  std::cout << "Optimized, " << NUM_THREADS << ", " << elapsed.count() << std::endl;
   return 0;
 }

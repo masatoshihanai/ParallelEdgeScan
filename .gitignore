@@ -3,3 +3,4 @@ CMakeLists.txt
 data/*
 a.out
 bin/*
+*.csv
