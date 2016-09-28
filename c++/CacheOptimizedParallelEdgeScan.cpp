@@ -108,7 +108,6 @@ int THREASHOLD = 1;
 int numOfQueries = 100;
 int departureTime = 0;
 bool printResult = true;
-bool dryRun = false;
 
 int main(int argc, char** argv) {
   int NUM_THREADS = std::stoi(argv[1]);
@@ -229,7 +228,6 @@ int main(int argc, char** argv) {
           labels[lid].store(imax);
         }
         barrier.wait();
-        if (dryRun) return;
         if (id == 0) labels[i].store(departureTime);
         barrier.wait();
         // Get source vertex
