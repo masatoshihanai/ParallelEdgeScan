@@ -236,7 +236,7 @@ int main(int argc, char** argv) {
         //auto edgeItr =  batchsPerThread[id].begin();
         auto edgeItr = reallocatedEdges[id]->begin();
         for (int barrierCounter = 0; barrierCounter < numBarrier; ++barrierCounter) {
-          while (edgeItr->departure => 0) {
+          while (edgeItr->departure >= 0) {
             if (edgeItr->departure >= labels[edgeItr->fromIndex].load()) {
               // CAS based
               int value = labels[edgeItr->toIndex];
